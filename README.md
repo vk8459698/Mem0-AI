@@ -21,7 +21,8 @@ The key insight is separating two critical functions:
 
 Here's a visual comparison of both approaches:
 
-![Grounded vs Ungrounded Memory](grounded_vs_ungrounded.png)
+![Grounded Memory](grounded.png)
+![Ungrounded Memory](ungrounded.png)
 
 Here's the core difference in code:
 
