@@ -19,7 +19,35 @@ The key insight is separating two critical functions:
 1. **Retrieval**: Finding relevant, factual information from trusted sources
 2. **Generation**: Using that retrieved information to craft a response
 
-Here's the core difference in approach:
+Here's a visual comparison of both approaches:
+
+```mermaid
+graph TB
+    subgraph "Ungrounded System (Traditional LLM)"
+        A1[User Query] --> B1[LLM]
+        B1 --> C1{Generate from<br/>Parametric Knowledge}
+        C1 --> D1[Response]
+        D1 -.->|May Hallucinate| E1[ No Source<br/>No Verification]
+    end
+    
+    subgraph "Grounded Memory System (RAG)"
+        A2[User Query] --> B2[Retrieval System]
+        B2 --> C2[(Knowledge Base<br/>Verified Documents)]
+        C2 --> D2[Top-K Relevant Docs]
+        D2 --> E2{Sufficient<br/>Context?}
+        E2 -->|No| F2[Admit Uncertainty]
+        E2 -->|Yes| G2[Build Context]
+        G2 --> H2[LLM with Context]
+        H2 --> I2[Response + Sources]
+        I2 --> J2[ Verifiable<br/>Source Attribution]
+    end
+    
+    style E1 fill:#ffcccc
+    style J2 fill:#ccffcc
+    style C2 fill:#e1f5ff
+```
+
+Here's the core difference in code:
 
 ```python
 # Without grounding: Generate → Hope it's correct
@@ -139,7 +167,7 @@ Interestingly, overly rigid grounding can make systems less helpful. If the syst
 
 As I continue working with these systems, I'm convinced that grounded memory represents a fundamental shift in how we should think about AI reliability. The future isn't about models that know everything—it's about models that know when they don't know, can look up what they need, and transparently show their reasoning.
 
-I'm particularly excited about dynamic memory updating, where systems automatically incorporate new information and flag outdated knowledge. I'm also exploring ways to make grounding more transparent—letting users see exactly which sentences in source documents informed each part of a response.
+I'm particularly excited about dynamic memory updating and making grounding more transparent—letting users see exactly which sentences in source documents informed each part of a response.
 
 ## Why This Matters
 
