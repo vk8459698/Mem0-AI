@@ -8,7 +8,7 @@ One of the most promising solutions I've encountered is "grounded memory"—a sh
 
 To appreciate why grounded memory matters, I first had to understand what causes hallucinations. Language models generate responses based on patterns learned during training. They don't actually "know" facts like humans do—they're predicting what text should come next based on statistical relationships observed in training data.
 
-The problem is clear when I ask about France's GDP growth rate in Q3 2023. The model confidently responds with "0.6%"—but there's no mechanism checking accuracy. It generates responses with no verification layer, no fact-checking, and no acknowledgment of uncertainty. The model sounds authoritative even when it's wrong.
+The problem becomes clear when I ask a model about France's GDP growth rate in Q3 2023. The model confidently responds with "0.6%"—but there's no mechanism checking accuracy. It generates responses with no verification layer, no fact-checking, and no acknowledgment of uncertainty. The model sounds authoritative even when it's wrong.
 
 ## What is Grounded Memory?
 
@@ -19,12 +19,7 @@ The key insight is separating two critical functions:
 1. **Retrieval**: Finding relevant, factual information from trusted sources
 2. **Generation**: Using that retrieved information to craft a response
 
-Here's a visual comparison of both approaches:
-
-![Grounded Memory](grounded.png)
-![Ungrounded Memory](ungrounded.png)
-
-Here's the core difference in code:
+Here's the core difference:
 
 ```python
 # Without grounding: Generate → Hope it's correct
@@ -44,7 +39,7 @@ Without grounding, the model generates first and hopes it's correct. With ground
 
 ## The Mechanics of Memory Grounding
 
-I've found that effective grounded memory systems operate on a few core principles that dramatically reduce hallucinations.
+I've found that effective grounded memory systems operate on three core principles that dramatically reduce hallucinations.
 
 ### Principle 1: Explicit Source Attribution
 
@@ -54,7 +49,7 @@ Every piece of information should be traceable to a source. When I implement gro
 
 The critical shift I've observed is timing. Instead of generating first and hoping the information is correct, grounded systems retrieve verified information first, then generate responses strictly based on that context.
 
-I've implemented this using what's called Retrieval-Augmented Generation (RAG). Here's how it works in practice:
+I've implemented this using Retrieval-Augmented Generation (RAG):
 
 ```python
 class RAGSystem:
@@ -72,7 +67,7 @@ class RAGSystem:
                 'grounded': False
             }
         
-        # Step 2: Build context and generate with explicit grounding instruction
+        # Step 2: Build context and generate with explicit grounding
         context = self._build_context(retrieved_docs)
         prompt = f"""Based ONLY on the following verified information, answer the question.
         If the information is not present, say so explicitly.
@@ -89,44 +84,24 @@ class RAGSystem:
         }
 ```
 
-The system first searches a database of documents using semantic similarity—comparing the meaning of the query against stored documents to identify top matches. Only after retrieving this context does the model generate a response, explicitly instructed to base its answer solely on the provided information.
+The system first searches a database using semantic similarity—comparing the meaning of the query against stored documents. Only after retrieving this context does the model generate a response, explicitly instructed to base its answer solely on the provided information.
 
 ### Principle 3: Uncertainty Acknowledgment
 
-One of the most important lessons I've learned is that it's better to admit uncertainty than to fabricate information. Grounded memory systems track confidence and acknowledge when information is incomplete or ambiguous, explicitly stating when they lack verified information rather than guessing.
+One of the most important lessons I've learned is that it's better to admit uncertainty than to fabricate information. Grounded memory systems track confidence and acknowledge when information is incomplete, explicitly stating when they lack verified information rather than guessing.
 
 ## The Impact on Hallucination Rates
 
-I've tested both approaches extensively using real API calls with Groq's free Llama 3.3 70B model. Here's the evaluation logic:
+I've tested both approaches extensively using Groq's free Llama 3.3 70B model. When I ran tests on three factual questions (France's GDP, Eiffel Tower height, Python release date) with verified ground truth:
 
-```python
-def evaluate_hallucination_rate(test_cases, system):
-    hallucinations = 0
-    total_claims = 0
-    
-    for question, truth in test_cases.items():
-        response = system.answer(question)
-        answer_text = response['answer'].lower()
-        correct_answer = truth['correct_answer'].lower()
-        
-        total_claims += 1
-        if correct_answer not in answer_text:
-            hallucinations += 1
-    
-    return (hallucinations / total_claims) * 100
-```
-
-When I ran this test on three factual questions (France's GDP, Eiffel Tower height, Python release date) with verified ground truth:
-- **Ungrounded System: 100% hallucination rate** - Direct LLM calls without context gave wrong answers: "324 meters" for Eiffel Tower (correct: 330m), "June 26, 2023" for Python 3.12 (correct: October 2, 2023)
+- **Ungrounded System: 100% hallucination rate** - Direct LLM calls gave wrong answers: "324 meters" for Eiffel Tower (correct: 330m), "June 26, 2023" for Python 3.12 (correct: October 2, 2023)
 - **Grounded System: 0% hallucination rate** - Retrieved from verified sources (INSEE, Official Eiffel Tower Documentation, Python Foundation) and correctly cited each answer
 
 In broader testing across different domains, ungrounded models typically show 15-30% hallucination rates, while properly implemented grounded systems stay below 5% when relevant documents exist.
 
-The remaining 4-5% in real-world scenarios typically comes from edge cases: ambiguous queries where context could be interpreted multiple ways, outdated information in the knowledge base, or complex reasoning requiring synthesis from multiple sources.
-
 ## Real-World Implementation Challenges
 
-I've also encountered significant challenges. Grounded memory isn't a silver bullet, and I've learned where it can struggle.
+I've encountered significant challenges implementing grounded memory in practice.
 
 ### Knowledge Base Quality
 
@@ -138,7 +113,7 @@ Sometimes the retrieval system fails to find relevant information, even when it 
 
 ### Over-Reliance on Sources
 
-Interestingly, overly rigid grounding can make systems less helpful. If the system refuses to answer anything not explicitly in its knowledge base, it becomes too conservative. Finding the right balance between grounding and general reasoning has been challenging—the system needs to know when to insist on verified sources (for specific factual claims) versus when it's appropriate to use broader reasoning (for explaining concepts or providing general guidance).
+Overly rigid grounding can make systems less helpful. If the system refuses to answer anything not explicitly in its knowledge base, it becomes too conservative. Finding the right balance has been challenging—the system needs to know when to insist on verified sources (for specific factual claims) versus when it's appropriate to use broader reasoning (for explaining concepts or providing general guidance).
 
 ## Looking Forward
 
@@ -148,7 +123,7 @@ I'm particularly excited about dynamic memory updating and making grounding more
 
 ## Why This Matters
 
-The hallucination problem isn't fully solved, but grounded memory has given me a practical path toward trustworthy AI. I built a working demonstration using Groq's free API—running the same question through both systems shows the stark difference: ungrounded gives "324 meters" for the Eiffel Tower, grounded correctly retrieves "330 meters" with source attribution.
+The hallucination problem isn't fully solved, but grounded memory has given me a practical path toward trustworthy AI. When I built a working demonstration using Groq's free API, running the same question through both systems showed the stark difference: ungrounded gave "324 meters" for the Eiffel Tower, grounded correctly retrieved "330 meters" with source attribution.
 
 We're building systems that are not just intelligent, but verifiable. When making important decisions based on AI-generated information, I need to trace claims back to reliable sources. I need the system to admit when it doesn't know rather than guessing. I need transparency in how conclusions are reached.
 
