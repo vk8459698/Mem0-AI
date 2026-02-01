@@ -21,31 +21,7 @@ The key insight is separating two critical functions:
 
 Here's a visual comparison of both approaches:
 
-```mermaid
-graph TB
-    subgraph "Ungrounded System (Traditional LLM)"
-        A1[User Query] --> B1[LLM]
-        B1 --> C1{Generate from<br/>Parametric Knowledge}
-        C1 --> D1[Response]
-        D1 -.->|May Hallucinate| E1[ No Source<br/>No Verification]
-    end
-    
-    subgraph "Grounded Memory System (RAG)"
-        A2[User Query] --> B2[Retrieval System]
-        B2 --> C2[(Knowledge Base<br/>Verified Documents)]
-        C2 --> D2[Top-K Relevant Docs]
-        D2 --> E2{Sufficient<br/>Context?}
-        E2 -->|No| F2[Admit Uncertainty]
-        E2 -->|Yes| G2[Build Context]
-        G2 --> H2[LLM with Context]
-        H2 --> I2[Response + Sources]
-        I2 --> J2[ Verifiable<br/>Source Attribution]
-    end
-    
-    style E1 fill:#ffcccc
-    style J2 fill:#ccffcc
-    style C2 fill:#e1f5ff
-```
+![Grounded vs Ungrounded Memory](grounded_vs_ungrounded.png)
 
 Here's the core difference in code:
 
